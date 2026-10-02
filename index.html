@@ -1,4 +1,4 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Surf Heat Timer</title>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#061723"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Heat Timer"><link rel="manifest" href="manifest.webmanifest"><title>Surf Heat Timer</title>
 <style>body{margin:0;background:#061723;color:white;font-family:system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:20px}.card{background:#0d2a3d;border-radius:20px;padding:18px;margin:14px 0}.c{display:flex;gap:10px;flex-wrap:wrap;align-items:center}button,input{font:inherit;border:0;border-radius:12px;padding:13px 17px}button{font-weight:800}.start{background:#19a974;color:#fff;font-size:22px}.pause{background:#f0b429}.reset{background:#d64545;color:#fff}.pre{background:#1c4b67;color:#fff}input{width:85px;font-size:22px;text-align:center}#clock{color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.55);text-align:center;font-size:clamp(90px,22vw,210px);font-weight:900;font-variant-numeric:tabular-nums}#state{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);text-align:center;font-size:24px}.note{opacity:.8;line-height:1.6}.warn{color:#ffd166}body.running{background:#087f23}body.yellow{background:#d4a000;color:#fff}body.finished{background:#b5161b}
 button{
   box-shadow:0 6px 0 rgba(0,0,0,.30),0 8px 14px rgba(0,0,0,.20);
@@ -6,8 +6,8 @@ button{
   transition:transform .08s ease,box-shadow .08s ease,filter .08s ease;
   -webkit-tap-highlight-color:transparent;
 }
-button:active{
-  transform:translateY(5px) scale(.99);
+button:active,button.pressed{
+  transform:translateY(6px) scale(.985);
   box-shadow:0 1px 0 rgba(0,0,0,.30),0 2px 5px rgba(0,0,0,.18);
   filter:brightness(.92);
 }
@@ -114,16 +114,30 @@ button{min-height:52px;touch-action:manipulation}
 </main>
 <script>
 const A={20:"20min",15:"15min",10:"10min",5:"5min",3:"3min",2:"2min",1:"1min"};let total=1200,left=1200,t=null,r=false;
-const q=x=>document.getElementById(x),play=x=>new Audio("audio/"+x+".wav").play().catch(()=>{}),fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+const q=x=>document.getElementById(x),fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+const audioNames=["20min","15min","10min","5min","3min","2min","1min","30sec","20sec","countdown","10","9","8","7","6","5","4","3","2","1"];
+const audios=Object.fromEntries(audioNames.map(n=>{const a=new Audio("audio/"+n+".wav");a.preload="auto";return[n,a]}));
+let audioCtx=null;
+async function unlockAudio(){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended") await audioCtx.resume();
+    const b=audioCtx.createBuffer(1,1,22050),src=audioCtx.createBufferSource();src.buffer=b;src.connect(audioCtx.destination);src.start(0);
+    for(const a of Object.values(audios)){a.load();}
+  }catch(e){}
+}
+function play(x){const a=audios[x]||new Audio("audio/"+x+".wav");try{a.currentTime=0}catch(e){};a.play().catch(()=>{});}
 function render(){q("clock").textContent=fmt(left);if(left<=0){document.body.className="finished"}else if(r){document.body.className=left<=180?"yellow":"running"}else{document.body.className=""}}
-function horn(n){let C=window.AudioContext||window.webkitAudioContext,c=new C();for(let i=0;i<n;i++){let s=c.currentTime+i*2.35,o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.value=390;g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.3,s+.04);g.gain.setValueAtTime(.3,s+1.85);g.gain.exponentialRampToValueAtTime(.0001,s+2);o.connect(g).connect(c.destination);o.start(s);o.stop(s+2.02)}}
+function horn(n){let c=audioCtx;if(!c){try{c=audioCtx=new (window.AudioContext||window.webkitAudioContext)()}catch(e){return}};if(c.state==="suspended")c.resume();for(let i=0;i<n;i++){let s=c.currentTime+i*2.35,o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.value=390;g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.3,s+.04);g.gain.setValueAtTime(.3,s+1.85);g.gain.exponentialRampToValueAtTime(.0001,s+2);o.connect(g).connect(c.destination);o.start(s);o.stop(s+2.02)}}
 function cd(){let n=10;let f=()=>{if(n){play(String(n--));setTimeout(f,1000)}};f()}
 function tick(){if(!r)return;left--;render();if(left%60===0){let x=left/60;if([20,15,10,5,3,2,1].includes(x)&&left<total){play(A[x])}}if(left===30)play("30sec");if(left===20)play("20sec");if(left===11)play("countdown");if(left===10)cd();if(left<=0){r=false;clearInterval(t);t=null;q("state").textContent="終了";horn(2)}}
 function setm(x){total=x*60;left=total;q("m").value=x;render()}
-q("start").onclick=()=>{if(r)return;if(left<=0)left=total;r=true;q("state").textContent="進行中";render();horn(1);t=setInterval(tick,1000)};
+q("start").onclick=async()=>{if(r)return;await unlockAudio();if(left<=0)left=total;r=true;q("state").textContent="進行中";render();horn(1);t=setInterval(tick,1000)};
 q("pause").onclick=()=>{r=false;clearInterval(t);t=null;q("state").textContent="一時停止";render()};
 q("reset").onclick=()=>{r=false;clearInterval(t);t=null;setm(Math.max(1,+q("m").value||45));q("state").textContent="待機中"};
 q("m").onchange=()=>{if(!r)setm(Math.max(1,Math.min(180,+q("m").value||45)))};document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{if(!r)setm(+b.dataset.m)});
+const isiPhone=/iPhone|iPod/.test(navigator.userAgent);
+if(isiPhone) q("fullscreen").style.display="none";
 q("fullscreen").onclick=async()=>{
   try{
     if(!document.fullscreenElement){
@@ -161,6 +175,11 @@ q("minutePicker").addEventListener("touchend",e=>{
 document.querySelectorAll("[data-m]").forEach(btn=>{
   btn.addEventListener("click",()=>{if(!r)updatePicker(+btn.dataset.m)});
 });
+document.querySelectorAll("button").forEach(b=>{
+  const down=()=>b.classList.add("pressed"),up=()=>b.classList.remove("pressed");
+  b.addEventListener("touchstart",down,{passive:true});b.addEventListener("touchend",up,{passive:true});b.addEventListener("touchcancel",up,{passive:true});
+});
+if("serviceWorker" in navigator) window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));
 updatePicker(20);
 render();
 </script></body></html>

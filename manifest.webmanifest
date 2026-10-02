@@ -1,0 +1,9 @@
+{
+  "name":"Surf Heat Timer",
+  "short_name":"Heat Timer",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#061723",
+  "theme_color":"#061723",
+  "orientation":"any"
+}
