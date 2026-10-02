@@ -1,0 +1,166 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Surf Heat Timer</title>
+<style>body{margin:0;background:#061723;color:white;font-family:system-ui,sans-serif}main{max-width:1000px;margin:auto;padding:20px}.card{background:#0d2a3d;border-radius:20px;padding:18px;margin:14px 0}.c{display:flex;gap:10px;flex-wrap:wrap;align-items:center}button,input{font:inherit;border:0;border-radius:12px;padding:13px 17px}button{font-weight:800}.start{background:#19a974;color:#fff;font-size:22px}.pause{background:#f0b429}.reset{background:#d64545;color:#fff}.pre{background:#1c4b67;color:#fff}input{width:85px;font-size:22px;text-align:center}#clock{color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.55);text-align:center;font-size:clamp(90px,22vw,210px);font-weight:900;font-variant-numeric:tabular-nums}#state{color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55);text-align:center;font-size:24px}.note{opacity:.8;line-height:1.6}.warn{color:#ffd166}body.running{background:#087f23}body.yellow{background:#d4a000;color:#fff}body.finished{background:#b5161b}
+button{
+  box-shadow:0 6px 0 rgba(0,0,0,.30),0 8px 14px rgba(0,0,0,.20);
+  transform:translateY(0);
+  transition:transform .08s ease,box-shadow .08s ease,filter .08s ease;
+  -webkit-tap-highlight-color:transparent;
+}
+button:active{
+  transform:translateY(5px) scale(.99);
+  box-shadow:0 1px 0 rgba(0,0,0,.30),0 2px 5px rgba(0,0,0,.18);
+  filter:brightness(.92);
+}
+.pickerWrap{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.12);padding:7px 12px;border-radius:14px}
+#m{
+  width:105px;height:58px;padding:4px 10px;border-radius:12px;
+  font-size:28px;font-weight:900;text-align:center;text-align-last:center;
+  background:#fff;color:#111;cursor:pointer;
+  box-shadow:inset 0 2px 5px rgba(0,0,0,.18);
+}
+
+/* Mobile-first responsive layout */
+html,body{min-height:100%;min-height:100dvh}
+body{overflow-x:hidden}
+main{width:100%;max-width:1100px;min-height:100dvh;padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left));display:flex;flex-direction:column;justify-content:center}
+h1{text-align:center;font-size:clamp(22px,7vw,34px);margin:4px 0 12px}
+.card{width:100%}
+.c{justify-content:center}
+#clock{font-size:clamp(82px,25vw,180px);white-space:nowrap}
+#state{font-size:clamp(20px,6vw,30px)}
+button{min-height:52px;touch-action:manipulation}
+.start{min-width:145px}
+@media (orientation:portrait){
+  main{max-width:620px}
+  .c{gap:13px}
+  .pickerWrap{width:100%;justify-content:center;margin-bottom:3px}
+  #m{height:62px;font-size:30px}
+  .start,.pause,.reset{flex:1 1 28%;min-width:100px}
+  .pre{flex:1 1 20%;min-width:68px}
+  #fullscreen{flex:1 1 100%}
+  #clock{font-size:clamp(88px,27vw,165px)}
+}
+@media (orientation:landscape){
+  main{max-width:1100px;padding:12px 24px}
+  h1{font-size:clamp(20px,3vw,30px);margin:0 0 6px}
+  .card{margin:8px 0;padding:13px 16px}
+  .c{flex-wrap:nowrap;gap:8px}
+  .pickerWrap{flex:0 0 auto}
+  #m{height:50px;font-size:25px}
+  button{min-height:46px;padding:10px 14px}
+  #clock{font-size:clamp(75px,18vw,170px)}
+  #state{font-size:clamp(18px,3vw,26px);margin-top:6px}
+}
+@media (min-width:768px) and (orientation:portrait){
+  main{max-width:760px}
+  #clock{font-size:clamp(130px,24vw,200px)}
+  button{font-size:18px;min-height:58px}
+}
+
+/* v11: iPhone portrait-first refinements */
+@media (orientation:portrait) and (max-width:767px){
+  main{width:100%;max-width:none;padding:12px;justify-content:flex-start}
+  h1{font-size:clamp(24px,7vw,32px);margin:20px 0 14px}
+  .card{padding:14px;margin:9px 0;border-radius:18px;overflow:hidden}
+  .c{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}
+  .pickerWrap{grid-column:1/-1;width:100%;height:78px;justify-content:center;margin:0}
+  #m{width:125px;height:62px;font-size:32px}
+  .start,.pause,.reset{min-width:0;width:100%;font-size:18px;padding:12px 8px}
+  .start{grid-column:1/2}
+  .pause{grid-column:2/3}
+  .reset{grid-column:1/-1}
+  #fullscreen{grid-column:1/-1;width:100%}
+  .pre{min-width:0;width:100%;font-size:19px}
+  .pre[data-m="12"]{grid-column:1/2}.pre[data-m="15"]{grid-column:2/3}
+  .pre[data-m="20"]{grid-column:1/2}.pre[data-m="30"]{grid-column:2/3}
+  #clock{font-size:clamp(82px,25vw,125px);letter-spacing:-.055em;width:100%;overflow:visible}
+  #state{font-size:22px}
+}
+/* More wheel-like native picker presentation */
+#m{-webkit-appearance:menulist;appearance:auto}
+
+#m{display:none!important}
+.pickerWrap{height:auto!important;padding:0!important;background:transparent!important}
+.minutePicker{
+ width:100%;max-width:280px;margin:auto;border-radius:18px;overflow:hidden;
+ background:rgba(255,255,255,.12);box-shadow:inset 0 2px 8px rgba(0,0,0,.25);
+ touch-action:pan-x;
+}
+.minuteStep{
+ width:100%;height:42px;border-radius:0;background:rgba(255,255,255,.07);color:#fff;
+ box-shadow:none!important;transform:none!important;font-size:17px;padding:4px;
+}
+.minuteStep:active{background:rgba(255,255,255,.18)!important;transform:scale(.98)!important}
+.minuteCurrent{
+ height:62px;display:flex;align-items:center;justify-content:center;gap:8px;
+ border-top:1px solid rgba(255,255,255,.25);border-bottom:1px solid rgba(255,255,255,.25);
+ font-size:42px;font-weight:900;
+}
+.minuteCurrent small{font-size:19px}
+@media(orientation:portrait) and (max-width:767px){
+ .pickerWrap{grid-column:1/-1;height:auto!important}
+ .minutePicker{max-width:260px}
+}
+</style></head><body><main><h1>🏄 SURF HEAT TIMER</h1>
+<div class="card c">ヒート <div class="pickerWrap">
+  <div class="minutePicker" id="minutePicker">
+    <button type="button" class="minuteStep" id="minuteUp" aria-label="1分増やす">▲ <span id="nextMinute">21</span></button>
+    <div class="minuteCurrent"><span id="minuteValue">20</span><small>分</small></div>
+    <button type="button" class="minuteStep" id="minuteDown" aria-label="1分減らす">▼ <span id="prevMinute">19</span></button>
+  </div>
+  <select id="m" aria-hidden="true" tabindex="-1"></select>
+</div> <button id="start" class="start">▶ スタート</button><button id="pause" class="pause">Ⅱ 一時停止</button><button id="reset" class="reset">↺ リセット</button><button class="pre" id="fullscreen">⛶ 全画面表示</button><button class="pre" data-m="12">12分</button><button class="pre" data-m="15">15分</button><button class="pre" data-m="20">20分</button><button class="pre" data-m="30">30分</button></div>
+<div class="card"><div id="clock">20:00</div><div id="state">待機中</div></div>
+</main>
+<script>
+const A={20:"20min",15:"15min",10:"10min",5:"5min",3:"3min",2:"2min",1:"1min"};let total=1200,left=1200,t=null,r=false;
+const q=x=>document.getElementById(x),play=x=>new Audio("audio/"+x+".wav").play().catch(()=>{}),fmt=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function render(){q("clock").textContent=fmt(left);if(left<=0){document.body.className="finished"}else if(r){document.body.className=left<=180?"yellow":"running"}else{document.body.className=""}}
+function horn(n){let C=window.AudioContext||window.webkitAudioContext,c=new C();for(let i=0;i<n;i++){let s=c.currentTime+i*2.35,o=c.createOscillator(),g=c.createGain();o.type="sawtooth";o.frequency.value=390;g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(.3,s+.04);g.gain.setValueAtTime(.3,s+1.85);g.gain.exponentialRampToValueAtTime(.0001,s+2);o.connect(g).connect(c.destination);o.start(s);o.stop(s+2.02)}}
+function cd(){let n=10;let f=()=>{if(n){play(String(n--));setTimeout(f,1000)}};f()}
+function tick(){if(!r)return;left--;render();if(left%60===0){let x=left/60;if([20,15,10,5,3,2,1].includes(x)&&left<total){play(A[x])}}if(left===30)play("30sec");if(left===20)play("20sec");if(left===11)play("countdown");if(left===10)cd();if(left<=0){r=false;clearInterval(t);t=null;q("state").textContent="終了";horn(2)}}
+function setm(x){total=x*60;left=total;q("m").value=x;render()}
+q("start").onclick=()=>{if(r)return;if(left<=0)left=total;r=true;q("state").textContent="進行中";render();horn(1);t=setInterval(tick,1000)};
+q("pause").onclick=()=>{r=false;clearInterval(t);t=null;q("state").textContent="一時停止";render()};
+q("reset").onclick=()=>{r=false;clearInterval(t);t=null;setm(Math.max(1,+q("m").value||45));q("state").textContent="待機中"};
+q("m").onchange=()=>{if(!r)setm(Math.max(1,Math.min(180,+q("m").value||45)))};document.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{if(!r)setm(+b.dataset.m)});
+q("fullscreen").onclick=async()=>{
+  try{
+    if(!document.fullscreenElement){
+      await document.documentElement.requestFullscreen();
+    }else{
+      await document.exitFullscreen();
+    }
+  }catch(e){}
+};
+document.addEventListener("fullscreenchange",()=>{
+  q("fullscreen").textContent=document.fullscreenElement?"✕ 全画面終了":"⛶ 全画面表示";
+});
+
+
+
+for(let i=1;i<=60;i++){const o=document.createElement("option");o.value=i;o.textContent=i;if(i===20)o.selected=true;q("m").appendChild(o)}
+let pickerValue=20,touchStartY=null;
+function updatePicker(v){
+  pickerValue=Math.max(1,Math.min(60,Math.round(v)));
+  q("minuteValue").textContent=pickerValue;
+  q("nextMinute").textContent=pickerValue<60?pickerValue+1:"";
+  q("prevMinute").textContent=pickerValue>1?pickerValue-1:"";
+  q("m").value=pickerValue;
+  if(!r)setm(pickerValue);
+}
+q("minuteUp").addEventListener("click",()=>{if(!r)updatePicker(pickerValue+1)});
+q("minuteDown").addEventListener("click",()=>{if(!r)updatePicker(pickerValue-1)});
+q("minutePicker").addEventListener("touchstart",e=>{touchStartY=e.touches[0].clientY},{passive:true});
+q("minutePicker").addEventListener("touchend",e=>{
+  if(touchStartY===null||!e.changedTouches.length)return;
+  const dy=e.changedTouches[0].clientY-touchStartY;
+  if(Math.abs(dy)>25&&!r)updatePicker(pickerValue+(dy<0?1:-1));
+  touchStartY=null;
+},{passive:true});
+document.querySelectorAll("[data-m]").forEach(btn=>{
+  btn.addEventListener("click",()=>{if(!r)updatePicker(+btn.dataset.m)});
+});
+updatePicker(20);
+render();
+</script></body></html>
